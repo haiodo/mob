@@ -1,0 +1,80 @@
+Java API for SWT UI easy building.
+
+Let's see standalone SWT UI creation code:
+
+final boolean[] isOK = {false}; 
+final Shell shell = new Shell(display, SWT.NONE);
+GridLayoutFactory.swtDefaults().numColumns(2).applyTo(shell);
+Label l = new Label(shell, SWT.NONE);
+l.setText("User name:");
+Text textField = new Text(shell, SWT.BORDER);
+textField.setText("Initial value");
+
+l = new Label("Password:", SWT.NONE);
+Text password = new Text(shell, SWT.PASSWORD);
+
+Button okButton = new Button(shell, SWT.PUSH);
+Button cancelButton = new Button(shell, SWT.PUSH);
+
+// Lets do data binding here.
+DataBindingContext abc = new DataBindingContext();
+dbc.bindValue(SWTObservables.text(SWT.Modify, textField), myUserName);
+dbc.bindValue(SWTObservables.text(SWT.Modify, password), myPassword);
+okButton.addSelectionListener(new SelectionAdapter() {
+	@override
+	public void widgetSelected(Event event) {
+		isOk[0] = true;
+		shell.close();
+	}
+});
+cancelButton.addSelectionListener(new SelectionAdapter() {
+	@override
+	public void widgetSelected(Event event) {
+		shell.close();
+	}
+});
+
+shell.open();
+
+So if we add some additional component creation code will will not see what happening at all.
+We really need a better API to construct user interface. I'm not thinking about some markup language, because it is not approach we want. Markups are no more readable or maintainable.
+
+Let's think about following API:
+MOB sba = new MOB();
+sba.window("MyWindow").
+	label("User name:").text().
+	label("Password:").text().
+	button("OK").button("Cancel");
+// And lets add grid layout here also.
+sba.styles().window("MyWindow").grid(2);
+
+// Bind text values to observebles I've need.
+sba.bind().text(0).observable(myUserName).
+	bind().text(1).observable(myPassword);
+final boolean[] isOK = {false}; 
+sba.action().button(0).selection(
+	new ActionListener() {
+		public void do(ControlHandle handle) {
+			isOK[0] = true;
+			handle.top().window().close(); // access to top control and close it.
+		}
+	}
+).action().button(1).selection( {
+	new ActionListener() {
+		public void do(ControlHandle handle) {
+			handle.top().window().close();
+		}
+	}
+);
+
+
+sba.show();
+
+What do we see here? Is it easier to build a UI?
+
+The question is how to make such API? I assume is pretty easy.
+Do we need such API? I suppose yes.
+
+What the styles() is ?. It's a CSS like builder API.
+
+UI modifications as a DOM model. This is really useful if we could make such API to be a Document Object Model, and then map to SWT or other controls.
