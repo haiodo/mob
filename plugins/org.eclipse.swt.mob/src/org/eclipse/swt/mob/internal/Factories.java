@@ -1,10 +1,7 @@
 package org.eclipse.swt.mob.internal;
 
-import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.StyledText;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.mob.MOB.WidgetFactory;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
@@ -28,6 +25,11 @@ public class Factories {
 		public int getDefaultStyle() {
 			return SWT.SHELL_TRIM | SWT.RESIZE;
 		}
+
+		@Override
+		public WidgetKind getKind() {
+			return WidgetKind.window;
+		}
 	};
 	public static WidgetFactory<Display> displayShell = new WidgetFactory<Display>() {
 		@Override
@@ -41,6 +43,11 @@ public class Factories {
 		public int getDefaultStyle() {
 			return SWT.SHELL_TRIM | SWT.RESIZE;
 		}
+
+		@Override
+		public WidgetKind getKind() {
+			return WidgetKind.window;
+		}
 	};
 	public static WidgetFactory<Composite> text = new WidgetFactory<Composite>() {
 		@Override
@@ -53,6 +60,11 @@ public class Factories {
 		public int getDefaultStyle() {
 			return SWT.WRAP;
 		};
+
+		@Override
+		public WidgetKind getKind() {
+			return WidgetKind.label;
+		}
 	};
 	public static WidgetFactory<Composite> editbox = new WidgetFactory<Composite>() {
 
@@ -66,6 +78,11 @@ public class Factories {
 		@Override
 		public int getDefaultStyle() {
 			return SWT.BORDER;
+		}
+
+		@Override
+		public WidgetKind getKind() {
+			return WidgetKind.text;
 		}
 	};
 	public static WidgetFactory<Composite> push_button = new WidgetFactory<Composite>() {
@@ -81,6 +98,11 @@ public class Factories {
 		public int getDefaultStyle() {
 			return 0;
 		}
+
+		@Override
+		public WidgetKind getKind() {
+			return WidgetKind.button;
+		}
 	};
 	public static WidgetFactory<Composite> composite = new WidgetFactory<Composite>() {
 		@Override
@@ -91,21 +113,28 @@ public class Factories {
 		@Override
 		public Widget create(Composite parent, int style) {
 			Composite widget = new Composite(parent, style);
-			GridLayoutFactory.swtDefaults().applyTo(widget);
+			GridLayoutFactory.swtDefaults().equalWidth(false).applyTo(widget);
+			((Control) widget).setBackground(widget.getDisplay()
+					.getSystemColor(SWT.COLOR_RED));
 			return widget;
+		}
+
+		@Override
+		public WidgetKind getKind() {
+			return WidgetKind.composite;
 		}
 	};
 
 	protected static void applyDefaultWidgetLayout(Control widget) {
-		if (widget instanceof Label) {
-			return;
-		}
-		if (widget instanceof Text | widget instanceof StyledText) {
-			if (widget.getParent().getLayout() instanceof GridLayout) {
-				GridDataFactory.fillDefaults().grab(true, false)
-						.applyTo(widget);
-			}
-		}
+		// if (widget instanceof Label) {
+		// return;
+		// }
+		// if (widget instanceof Text | widget instanceof StyledText) {
+		// if (widget.getParent().getLayout() instanceof GridLayout) {
+		// GridDataFactory.fillDefaults().grab(true, false)
+		// .applyTo(widget);
+		// }
+		// }
 	}
 
 }

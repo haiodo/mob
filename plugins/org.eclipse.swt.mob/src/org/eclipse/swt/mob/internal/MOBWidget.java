@@ -12,6 +12,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.mob.MOB.WidgetFactory;
+import org.eclipse.swt.mob.MOBStyles.Align;
 import org.eclipse.swt.mob.internal.MOBProperties.Layouts;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
@@ -28,9 +29,21 @@ public class MOBWidget {
 	private Map<String, Object> properties = null;
 	private Widget widget;
 	private Display display;
+	private WidgetKind kind;
 
-	public MOBWidget(WidgetFactory<?> clazz) {
+	public MOBWidget(MOBWidget parent, WidgetFactory<?> clazz) {
+		this.parent = parent;
 		this.factory = clazz;
+		if (clazz != null) {
+			this.kind = clazz.getKind();
+		} else {
+			this.kind = WidgetKind.display;
+		}
+
+	}
+
+	public WidgetKind getKind() {
+		return kind;
 	}
 
 	public void append(MOBWidget child) {
@@ -48,18 +61,22 @@ public class MOBWidget {
 		return this;
 	}
 
+	public String getAttrStr(String key) {
+		if (properties != null) {
+			Object value = properties.get(key);
+			if (value != null) {
+				return value.toString();
+			}
+		}
+		return null;
+	}
+
 	public void construct(MOBWidget parent) {
 		this.parent = parent;
 
 		if (factory != null) {
 			widget = factory.create(parent != null ? parent.getWidget() : null,
 					collectStyle());
-		}
-		if (children != null && children.size() > 0) {
-			// construct and add all childrens
-			for (MOBWidget widget : children) {
-				widget.construct(this);
-			}
 		}
 		// Update properties
 		if (properties != null) {
@@ -73,21 +90,75 @@ public class MOBWidget {
 				applyLayout(layout);
 			}
 			// Apply layout style
-			applyStyle((Integer[]) properties.get(MOBProperties.LAYOUT_SPAN));
+			applyStyle((Integer[]) properties.get(MOBProperties.LAYOUT_SPAN),
+					(Align[]) properties.get(MOBProperties.LAYOUT_ALIGN),
+					(Boolean[]) properties.get(MOBProperties.LAYOUT_GRAB));
+		}
+		if (children != null && children.size() > 0) {
+			// construct and add all childrens
+			for (MOBWidget widget : children) {
+				widget.construct(this);
+			}
 		}
 
 	}
 
-	private void applyStyle(Integer[] span) {
-		if (span != null && widget instanceof Control) {
+	private void applyStyle(Integer[] span, Align[] aligns, Boolean[] grab) {
+		if (widget instanceof Control) {
 			Control ctrl = (Control) widget;
-			if (ctrl.getParent().getLayout() instanceof GridLayout) {
+			if (ctrl.getParent() != null
+					&& ctrl.getParent().getLayout() instanceof GridLayout) {
 				if (ctrl.getLayoutData() == null) {
-					GridDataFactory.fillDefaults().span(span[0], span[1]);
-				} else if (ctrl.getLayoutData() instanceof GridData) {
-					GridData gdata = (GridData) ctrl.getLayoutData();
-					gdata.horizontalSpan = span[0];
-					gdata.verticalSpan = span[1];
+					GridDataFactory.fillDefaults().applyTo(ctrl);
+				}
+				GridData data = (GridData) ctrl.getLayoutData();
+				if (span != null) {
+					data.horizontalSpan = span[0];
+					data.verticalSpan = span[1];
+				}
+				if (aligns != null && aligns.length > 0) {
+					for (Align align : aligns) {
+						switch (align) {
+						case bottom:
+							data.verticalAlignment |= SWT.END;
+							break;
+						case left:
+							data.horizontalAlignment |= SWT.BEGINNING;
+							break;
+						case right:
+							data.horizontalAlignment |= SWT.END;
+							break;
+						case top:
+							data.verticalAlignment |= SWT.BEGINNING;
+							break;
+						case center:
+							data.horizontalAlignment |= SWT.CENTER;
+							break;
+						case vcenter:
+							data.verticalAlignment |= SWT.CENTER;
+							break;
+						case fill:
+							data.horizontalAlignment |= SWT.FILL;
+							break;
+						case vfill:
+							data.verticalAlignment |= SWT.FILL;
+							break;
+						}
+					}
+				}
+				if (grab != null) {
+					if (grab[0]) {
+						//data.horizontalAlignment = SWT.FILL;
+						data.grabExcessHorizontalSpace = true;
+					} else {
+						data.grabExcessHorizontalSpace = false;
+					}
+					if (grab[1]) {
+						//data.verticalAlignment = SWT.FILL;
+						data.grabExcessVerticalSpace = true;
+					} else {
+						data.grabExcessVerticalSpace = false;
+					}
 				}
 			}
 		}
@@ -160,5 +231,13 @@ public class MOBWidget {
 
 	public void setDisplay(Display d) {
 		this.display = d;
+	}
+
+	public List<MOBWidget> getChildren() {
+		return children;
+	}
+
+	public MOBWidget getParent() {
+		return parent;
 	}
 }

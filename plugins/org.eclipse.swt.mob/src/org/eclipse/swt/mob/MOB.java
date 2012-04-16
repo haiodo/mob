@@ -8,12 +8,13 @@ import org.eclipse.jface.databinding.swt.SWTObservables;
 import org.eclipse.swt.mob.internal.Factories;
 import org.eclipse.swt.mob.internal.MOBProperties;
 import org.eclipse.swt.mob.internal.MOBWidget;
+import org.eclipse.swt.mob.internal.WidgetKind;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Widget;
 
 public class MOB {
 	private MOBWidget currentWindow = null;
-	private MOBWidget display = new MOBWidget(null);
+	private MOBWidget display = new MOBWidget(null, null);
 	private List<MOBWidget> currentGroup = new ArrayList<MOBWidget>();
 	private DataBindingContext dbc;
 	private MOBWidget lastChild;
@@ -22,6 +23,8 @@ public class MOB {
 		Widget create(T parent, int style);
 
 		int getDefaultStyle();
+
+		WidgetKind getKind();
 	}
 
 	public void show(Display d) {
@@ -51,7 +54,7 @@ public class MOB {
 	}
 
 	private MOBWidget newChild(MOBWidget root, WidgetFactory factory) {
-		MOBWidget ch = new MOBWidget(factory);
+		MOBWidget ch = new MOBWidget(root, factory);
 		if (root != null) {
 			root.append(ch);
 		}
@@ -70,12 +73,6 @@ public class MOB {
 		return this;
 	}
 
-	public MOB gridLayout(int numColumns) {
-		currentGroup.get(0).setAttr(MOBProperties.LAYOUT,
-				new Object[] { MOBProperties.Layouts.grid, numColumns });
-		return this;
-	}
-
 	public MOB button(String value) {
 		newChild(currentGroup.get(0), Factories.push_button).setAttr(
 				MOBProperties.TEXT, value);
@@ -90,9 +87,13 @@ public class MOB {
 		return this;
 	}
 
-	public MOB span(int columns) {
-		lastChild.setAttr(MOBProperties.LAYOUT_SPAN,
-				new Integer[] { columns, 1 });
+	public MOB box() {
+		MOBWidget widget = newChild(currentGroup.get(0), Factories.composite);
+		currentGroup.add(0, widget);
 		return this;
+	}
+
+	public MOBStyles styles() {
+		return new MOBStyles(display);
 	}
 }
