@@ -127,5 +127,5 @@ Benefits for this approach:
 * Clear separation from styles, binding and UI elements.
 * Potentially it could be used over SWT and SWING at same time.
 
-How may need this?
+Who may need this?
 Probable somebody will try it out.
