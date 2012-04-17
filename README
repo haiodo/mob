@@ -1,0 +1,131 @@
+Java API for SWT UI easy building try to not try?
+
+I've very tired writing standalone SWT code, it's really ugly.
+After few iterations it is absolutely unreal to understand how it will will look like, you just need to run it.
+
+Lets write a simple password dialog with standalone SWT and think about how to improve it.
+
+Let's see standalone SWT UI creation code:
+
+final boolean[] isOK = {false}; 
+final Shell shell = new Shell(display, SWT.NONE);
+GridLayoutFactory.swtDefaults().numColumns(2).applyTo(shell);
+Label l = new Label(shell, SWT.NONE);
+l.setText("User name:");
+Text textField = new Text(shell, SWT.BORDER);
+textField.setText("Initial value");
+
+l = new Label("Password:", SWT.NONE);
+Text password = new Text(shell, SWT.PASSWORD);
+
+Button okButton = new Button(shell, SWT.PUSH);
+Button cancelButton = new Button(shell, SWT.PUSH);
+
+// Lets do data binding here.
+DataBindingContext abc = new DataBindingContext();
+dbc.bindValue(SWTObservables.text(SWT.Modify, textField), myUserName);
+dbc.bindValue(SWTObservables.text(SWT.Modify, password), myPassword);
+okButton.addSelectionListener(new SelectionAdapter() {
+	@override
+	public void widgetSelected(Event event) {
+		isOk[0] = true;
+		shell.close();
+	}
+});
+cancelButton.addSelectionListener(new SelectionAdapter() {
+	@override
+	public void widgetSelected(Event event) {
+		shell.close();
+	}
+});
+
+shell.open();
+
+So if we add some additional component creation code will will not see what happening at all.
+And after a lot of code creating UI, we will come to new methods, and so on.
+And will not see how UI should look.
+We need to rerun application each time if we make some complex modifications.
+
+We really need a better API to construct user interface. 
+I'm not thinking about some markup language, because it is not approach I've want.
+
+I've tried different markup languages available for Eclipse. 
+Let's try XWT to reproduce our sample:
+
+<Composite xmlns="http://www.eclipse.org/xwt/presentation" xmlns:x="http://www.eclipse.org/xwt" xmlns:j=“clr-namespace:ui“>
+  <Composite.layout> 	<GridLayout numColumns="2"/>
+  </Composite.layout>
+  <Label Text=“Name:"/> 
+  <Text/>
+  <Label Text=“Password:"/>
+  <Text/>
+  <Composite>
+     <Composite.layout> 	<GridLayout numColumns="2"/>
+     </Composite.layout>
+     <Button Text="OK"/>
+     <Button Text="Cancel"/>
+  </Composite>
+</Composite>
+
+This is 21 century? This ugly stuff is going into Eclipse 4? Are you joking guys?
+I've really prefer java instead of XWT.
+
+Most of us use StringBuilder br = new …() ; br.append("a dasds").append("adsad"). It is easy.
+Why not use same approach for UI building. In most cases we don't need variables for each labels, windows, buttons and so on.
+In some cases we just need a way to access one particular control, to update it. Or to bind it to some observable and forget about it.
+After some thinking I've come to following approach: 
+Code name for a project is MOB. It a builder for UI and other stuff, no matter.
+
+MOB mob = new MOB();
+
+mob.window("MyWindow").
+	label("User name:").text().
+	label("Password:").text().
+	button("OK").button("Cancel");
+
+This is exactly we will see on display. Let's don't think about widget positions right now.
+But we also need some styles? Best Idea for styles is to use CSS. But also we could just specify each style for each widget we want.
+Only one thing we need is a widget lookup engine.
+
+// And lets add grid layout here also.
+mob.styles().
+    style().window("MyWindow").gridLayout(2).
+    style().text().grab(true,false).
+    style().label("Password").text().grab(true,false);
+
+So window will have a grid layout with number of rows 2.
+First text control will be filled horizontally, and text control after label "Password" will be filled horizontally.
+
+Same lookup engine could be used to bind controls to observables.
+Real binding will be performed then controls will be created.
+
+// Bind text values to observebles I've need.
+mob.bind().text(0).observable(myUserName).
+	bind().text(1).observable(myPassword);
+final boolean[] isOK = {false}; 
+mob.action().button(0).selection(
+	new ActionListener() {
+		public void do(ControlHandle handle) {
+			isOK[0] = true;
+			handle.top().window().close(); // access to top control and close it.
+		}
+	}
+).action().button(1).selection( {
+	new ActionListener() {
+		public void do(ControlHandle handle) {
+			handle.top().window().close();
+		}
+	}
+);
+
+mob.show();
+
+Benefits for this approach:
+* It is Java, no ugly xml. Of cause we could use some DSL to load model from.
+* Widget lookup engine could be used to obtain widgets in runtime on in static.
+* Code looks clear.
+* Clear separation from styles, binding and UI elements.
+* Potentially it could be used over SWT and SWING at same time.
+
+How may need this?
+Probable somebody will try it out.
